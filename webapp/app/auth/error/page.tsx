@@ -4,8 +4,10 @@ import { useSearchParams } from "next/navigation";
 import { Card } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import Link from "next/link";
+import { Suspense } from 'react';
 
-export default function AuthError() {
+// Separate component that uses useSearchParams
+function AuthErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
@@ -25,5 +27,14 @@ export default function AuthError() {
         </Button>
       </Card>
     </div>
+  );
+}
+
+// Main page component with Suspense
+export default function AuthError() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <AuthErrorContent />
+    </Suspense>
   );
 }

@@ -4,8 +4,10 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "../../../components/ui/button";
 import { Card } from "../../../components/ui/card";
+import { Suspense } from 'react';
 
-export default function SignIn() {
+// Separate component that uses useSearchParams
+function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
@@ -24,5 +26,14 @@ export default function SignIn() {
         </Button>
       </Card>
     </div>
+  );
+}
+
+// Main page component with Suspense
+export default function SignIn() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <SignInContent />
+    </Suspense>
   );
 }
