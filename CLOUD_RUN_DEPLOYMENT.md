@@ -7,20 +7,34 @@ This guide explains how to deploy the Switchboard application to Google Cloud Ru
 1. Google Cloud CLI installed and configured
 2. Docker installed locally
 3. Access to Google Cloud with permissions to create Cloud Run services
+4. Google OAuth 2.0 credentials (Client ID and Client Secret)
+
+## Creating Google OAuth Credentials
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to "APIs & Services" > "Credentials"
+3. Click "Create Credentials" > "OAuth client ID"
+4. Select "Web application" as the application type
+5. Add your Cloud Run URL to the "Authorized JavaScript origins" (e.g., `https://your-service.a.run.app`)
+6. Add your Cloud Run URL plus `/api/auth/callback/google` to the "Authorized redirect URIs" (e.g., `https://your-service.a.run.app/api/auth/callback/google`)
+7. Click "Create" and note your Client ID and Client Secret
 
 ## Environment Variables
 
 The following environment variables are required for deployment:
 
-- `AUTH_USERNAME`: Username for basic HTTP authentication (required for security)
-- `AUTH_PASSWORD`: Password for basic HTTP authentication (required for security)
+- `GOOGLE_CLIENT_ID`: Your Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET`: Your Google OAuth client secret
+- `NEXTAUTH_SECRET`: A random string used to encrypt cookies (generated automatically if not provided)
+- `NEXTAUTH_URL`: The public URL of your application (defaults to PUBLIC_URL if not provided)
+- `ALLOWED_DOMAINS`: Optional comma-separated list of domains to restrict login (e.g., `example.com,example.org`)
 - `OPENAI_API_KEY`: Your OpenAI API key
 - `TWILIO_ACCOUNT_SID`: Your Twilio account SID
 - `TWILIO_AUTH_TOKEN`: Your Twilio auth token
 - `PUBLIC_URL`: The public URL of your Cloud Run service (optional, auto-detected)
 - `WEBSOCKET_URL`: URL for WebSocket connections (optional, defaults to PUBLIC_URL)
 
-> **Security Note**: The HTTP authentication is dynamically configured at container startup using the `AUTH_USERNAME` and `AUTH_PASSWORD` environment variables. These values are read directly from the Cloud Run environment variables, allowing you to update credentials without rebuilding the container.
+> **Security Note**: The application now uses Google OAuth for authentication instead of basic HTTP authentication. This provides more secure authentication with features like single sign-on and multi-factor authentication.
 
 ## Build and Deploy
 
@@ -45,10 +59,10 @@ gcloud run deploy switchboard \
   --allow-unauthenticated \
   --port 8080 \
   --region [YOUR_REGION] \
-  --set-env-vars="AUTH_USERNAME=your_chosen_username,AUTH_PASSWORD=your_secure_password,OPENAI_API_KEY=your_openai_key,TWILIO_ACCOUNT_SID=your_twilio_sid,TWILIO_AUTH_TOKEN=your_twilio_token"
+  --set-env-vars="GOOGLE_CLIENT_ID=your_client_id,GOOGLE_CLIENT_SECRET=your_client_secret,NEXTAUTH_SECRET=your_random_secret,ALLOWED_DOMAINS=your_domain.com,OPENAI_API_KEY=your_openai_key,TWILIO_ACCOUNT_SID=your_twilio_sid,TWILIO_AUTH_TOKEN=your_twilio_token"
 ```
 
-> **Note**: You can update the authentication credentials later without rebuilding the container by updating the `AUTH_USERNAME` and `AUTH_PASSWORD` environment variables in the Cloud Run service configuration.
+> **Note**: The `NEXTAUTH_SECRET` is used to encrypt cookies and tokens. If not provided, a random value will be generated during container startup, but the value will change with each deployment, invalidating existing sessions.
 
 ## Automation with Cloud Build
 
@@ -77,34 +91,47 @@ steps:
         '--port',
         '8080',
         '--set-env-vars',
-        'AUTH_USERNAME=$$AUTH_USERNAME,AUTH_PASSWORD=$$AUTH_PASSWORD,OPENAI_API_KEY=$$OPENAI_API_KEY,TWILIO_ACCOUNT_SID=$$TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN=$$TWILIO_AUTH_TOKEN'
+        'GOOGLE_CLIENT_ID=$$GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET=$$GOOGLE_CLIENT_SECRET,NEXTAUTH_SECRET=$$NEXTAUTH_SECRET,ALLOWED_DOMAINS=$$ALLOWED_DOMAINS,OPENAI_API_KEY=$$OPENAI_API_KEY,TWILIO_ACCOUNT_SID=$$TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN=$$TWILIO_AUTH_TOKEN'
       ]
 images:
   - 'gcr.io/$PROJECT_ID/switchboard'
 substitutions:
-  _AUTH_USERNAME: admin
+  _ALLOWED_DOMAINS: your_domain.com
 options:
-  secretEnv: ['AUTH_PASSWORD', 'OPENAI_API_KEY', 'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN']
+  secretEnv: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'NEXTAUTH_SECRET', 'OPENAI_API_KEY', 'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN']
 ```
 
 Then set up your secret environment variables in Secret Manager.
 
 ## Accessing the Application
 
-After deployment, your application will be available at the Cloud Run URL. You'll need to use the basic authentication credentials to access it.
+After deployment, your application will be available at the Cloud Run URL. Users will be redirected to Google's sign-in page for authentication. Only users with email addresses from domains specified in the `ALLOWED_DOMAINS` environment variable will be allowed to access the application (if configured).
 
 ## Updating the Application
 
 To update the application, rebuild the Docker image and redeploy to Cloud Run using the same commands as above.
 
-### Updating Authentication Credentials
+### Updating OAuth Configuration
 
-You can update the HTTP authentication credentials without rebuilding the container:
+You can update the OAuth configuration without rebuilding the container:
 
 1. Go to the Cloud Run service in the Google Cloud Console
 2. Click on the "Edit and Deploy New Revision" button
 3. Scroll down to the "Container, Networking, Security" section and expand it
-4. Under "Environment Variables", update the `AUTH_USERNAME` and/or `AUTH_PASSWORD` values
+4. Under "Environment Variables", update the OAuth-related environment variables:
+   - `GOOGLE_CLIENT_ID`: Update if you created new OAuth credentials
+   - `GOOGLE_CLIENT_SECRET`: Update if you created new OAuth credentials
+   - `ALLOWED_DOMAINS`: Update to change which email domains are allowed to access the application
 5. Click "Deploy" to apply the changes
 
-The new credentials will take effect immediately when the new revision is deployed.
+The new configuration will take effect immediately when the new revision is deployed.
+
+### Modifying Authorized Domains
+
+To update which domains can access your application:
+
+1. Go to the Cloud Run service in the Google Cloud Console
+2. Update the `ALLOWED_DOMAINS` environment variable with a comma-separated list of allowed domains (e.g., `example.com,example.org`)
+3. Deploy the new revision
+
+Users with email addresses from the specified domains will be allowed to access the application.

@@ -1,17 +1,32 @@
 #!/bin/sh
 set -e
 
-# Create .htpasswd file for basic authentication
-# Use environment variables for username and password
-if [ -z "$AUTH_USERNAME" ] || [ -z "$AUTH_PASSWORD" ]; then
-  echo "Warning: AUTH_USERNAME or AUTH_PASSWORD not set. Using default credentials."
-  AUTH_USERNAME=${AUTH_USERNAME:-admin}
-  AUTH_PASSWORD=${AUTH_PASSWORD:-password}
+# Check for required OAuth environment variables
+if [ -z "$GOOGLE_CLIENT_ID" ] || [ -z "$GOOGLE_CLIENT_SECRET" ]; then
+  echo "Error: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set for Google OAuth"
+  echo "Please set these environment variables and restart the container."
+  exit 1
 fi
 
-# Create htpasswd file from environment variables
-htpasswd -bc /etc/nginx/.htpasswd "$AUTH_USERNAME" "$AUTH_PASSWORD"
-echo "Basic authentication configured for user: $AUTH_USERNAME"
+# Set NEXTAUTH_URL if not provided (required for NextAuth.js)
+if [ -z "$NEXTAUTH_URL" ]; then
+  export NEXTAUTH_URL=${PUBLIC_URL}
+  echo "NEXTAUTH_URL set to: $NEXTAUTH_URL"
+fi
+
+# Set NEXTAUTH_SECRET if not provided (required for NextAuth.js)
+if [ -z "$NEXTAUTH_SECRET" ]; then
+  if [ -z "$NEXTAUTH_SECRET_SEED" ]; then
+    echo "Warning: NEXTAUTH_SECRET not set. Using a random value."
+    export NEXTAUTH_SECRET=$(openssl rand -base64 32)
+  else
+    echo "Generating NEXTAUTH_SECRET from seed value."
+    export NEXTAUTH_SECRET=$(echo $NEXTAUTH_SECRET_SEED | openssl dgst -sha256 -binary | openssl base64)
+  fi
+  echo "NEXTAUTH_SECRET has been set."
+fi
+
+echo "Google OAuth authentication configured"
 
 # Generate and export PUBLIC_URL for Cloud Run
 if [ -z "$PUBLIC_URL" ]; then

@@ -1,5 +1,5 @@
 # Use Node.js as the base image
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -8,7 +8,7 @@ WORKDIR /app
 # Copy package files for both services
 COPY websocket-server/package*.json ./websocket-server/
 COPY webapp/package*.json ./webapp/
-
+RUN npm install -g npm@11.3.0
 # Install dependencies for both services
 RUN cd websocket-server && npm ci
 RUN cd webapp && npm ci
@@ -36,8 +36,8 @@ RUN cd webapp && npm run build
 FROM base AS runner
 WORKDIR /app
 
-# Install dependencies for basic auth and utilities
-RUN apk add --no-cache apache2-utils nginx supervisor
+# Install dependencies for utilities (no longer need apache2-utils for basic auth)
+RUN apk add --no-cache nginx supervisor openssl
 
 # Copy build artifacts
 COPY --from=builder /app/websocket-server/dist ./websocket-server/dist
