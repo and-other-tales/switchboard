@@ -1,6 +1,8 @@
-import twilioClient from "@/lib/twilio";
+import { getTwilioClient } from "@/lib/twilio";
 
 export async function GET() {
+  const twilioClient = getTwilioClient();
+  
   if (!twilioClient) {
     return Response.json(
       { error: "Twilio client not initialized" },
@@ -15,6 +17,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const twilioClient = getTwilioClient();
+  
   if (!twilioClient) {
     return Response.json(
       { error: "Twilio client not initialized" },
