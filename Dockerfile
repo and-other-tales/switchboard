@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     software-properties-common \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs python3.12 python3.12-venv python3.12-distutils \
+    && apt-get install -y nodejs python3 python3-venv python3-pip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies only when needed
