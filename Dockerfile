@@ -8,7 +8,6 @@ WORKDIR /app
 # Copy package files for both services
 COPY websocket-server/package*.json ./websocket-server/
 COPY webapp/package*.json ./webapp/
-RUN npm install -g npm@11.3.0
 # Install dependencies for both services
 RUN cd websocket-server && npm ci
 # Use npm install instead of npm ci for webapp to update the lock file
@@ -37,13 +36,14 @@ RUN cd webapp && npm run build
 FROM base AS runner
 WORKDIR /app
 
-# Install dependencies for utilities using available Alpine packages
-RUN apk add --no-cache \
-    nginx \
-    python3 \
-    py3-pip \
-    openssl \
-    && pip3 install supervisor
+# Install basic dependencies with explicit repository URL
+RUN echo "https://mirror.math.princeton.edu/pub/alpinelinux/v3.19/main" > /etc/apk/repositories && \
+    echo "https://mirror.math.princeton.edu/pub/alpinelinux/v3.19/community" >> /etc/apk/repositories && \
+    apk update && \
+    apk add --no-cache openssl bash procps
+
+# Use npm to install supervisor globally
+RUN npm install -g supervisor
 
 # Copy build artifacts
 COPY --from=builder /app/websocket-server/dist ./websocket-server/dist
