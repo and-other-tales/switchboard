@@ -11,7 +11,8 @@ COPY webapp/package*.json ./webapp/
 RUN npm install -g npm@11.3.0
 # Install dependencies for both services
 RUN cd websocket-server && npm ci
-RUN cd webapp && npm ci
+# Use npm install instead of npm ci for webapp to update the lock file
+RUN cd webapp && npm install
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -29,7 +30,7 @@ COPY webapp ./webapp
 RUN cd websocket-server && npm run build
 
 # Build webapp
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN cd webapp && npm run build
 
 # Production image, copy all the files and run
