@@ -1,5 +1,13 @@
-# Use Node.js as the base image
-FROM node:22-alpine AS base
+# Use Ubuntu 24.10 as the base image
+FROM ubuntu:24.10 AS base
+
+# Install Node.js 22 and Python 3.12
+RUN apt-get update && apt-get install -y \
+    curl \
+    software-properties-common \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs python3.12 python3.12-venv python3.12-distutils \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -10,7 +18,6 @@ COPY websocket-server/package*.json ./websocket-server/
 COPY webapp/package*.json ./webapp/
 # Install dependencies for both services
 RUN cd websocket-server && npm ci
-# Use npm install instead of npm ci for webapp to update the lock file
 RUN cd webapp && npm install
 
 # Rebuild the source code only when needed
@@ -36,14 +43,12 @@ RUN cd webapp && npm run build
 FROM base AS runner
 WORKDIR /app
 
-# Install basic dependencies with explicit repository URL
-RUN echo "https://mirror.math.princeton.edu/pub/alpinelinux/v3.19/main" > /etc/apk/repositories && \
-    echo "https://mirror.math.princeton.edu/pub/alpinelinux/v3.19/community" >> /etc/apk/repositories && \
-    apk update && \
-    apk add --no-cache openssl bash procps
-
-# Use npm to install supervisor globally
-RUN npm install -g supervisor
+# Install additional utilities
+RUN apt-get update && apt-get install -y \
+    nginx \
+    supervisor \
+    openssl \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy build artifacts
 COPY --from=builder /app/websocket-server/dist ./websocket-server/dist
