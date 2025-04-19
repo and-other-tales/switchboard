@@ -37,8 +37,13 @@ RUN cd webapp && npm run build
 FROM base AS runner
 WORKDIR /app
 
-# Install dependencies for utilities (no longer need apache2-utils for basic auth)
-RUN apk add --no-cache nginx supervisor openssl
+# Install dependencies for utilities using available Alpine packages
+RUN apk add --no-cache \
+    nginx \
+    python3 \
+    py3-pip \
+    openssl \
+    && pip3 install supervisor
 
 # Copy build artifacts
 COPY --from=builder /app/websocket-server/dist ./websocket-server/dist
