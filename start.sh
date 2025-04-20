@@ -3,9 +3,10 @@ set -e
 
 # Check for required OAuth environment variables
 if [ -z "$GOOGLE_CLIENT_ID" ] || [ -z "$GOOGLE_CLIENT_SECRET" ]; then
-  echo "Error: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set for Google OAuth"
-  echo "Please set these environment variables and restart the container."
-  exit 1
+  echo "Warning: GOOGLE_CLIENT_ID and/or GOOGLE_CLIENT_SECRET not set."
+  echo "Setting test values for local development - DO NOT USE IN PRODUCTION!"
+  export GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-"TEST_CLIENT_ID"}
+  export GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-"TEST_CLIENT_SECRET"}
 fi
 
 # Set NEXTAUTH_URL if not provided (required for NextAuth.js)

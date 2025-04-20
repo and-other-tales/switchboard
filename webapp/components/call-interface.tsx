@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { getSession } from "next-auth/react";
 import TopBar from "@/components/top-bar";
 import ChecklistAndConfig from "@/components/checklist-and-config";
 import SessionConfigurationPanel from "@/components/session-configuration-panel";
@@ -9,6 +10,7 @@ import FunctionCallsPanel from "@/components/function-calls-panel";
 import { Item } from "@/components/types";
 import handleRealtimeEvent from "@/lib/handle-realtime-event";
 import PhoneNumberChecklist from "@/components/phone-number-checklist";
+import { getIamToken } from "@/lib/use-backend-tools";
 
 const CallInterface = () => {
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState("");
@@ -16,10 +18,35 @@ const CallInterface = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [callStatus, setCallStatus] = useState("disconnected");
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
+  // Get the authentication token
+  useEffect(() => {
+    const fetchToken = async () => {
+      const token = await getIamToken();
+      setAuthToken(token);
+    };
+    
+    fetchToken();
+  }, []);
 
   useEffect(() => {
-    if (allConfigsReady && !ws) {
-      const newWs = new WebSocket("ws://localhost:8081/logs");
+    if (allConfigsReady && !ws && authToken) {
+      // Determine WebSocket URL based on environment
+      let wsUrl;
+      
+      if (process.env.NODE_ENV === "development") {
+        wsUrl = "ws://localhost:8081/logs";
+      } else {
+        // In production, use the configured WEBSOCKET_URL
+        const websocketUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || window.location.origin;
+        wsUrl = websocketUrl.replace(/^http/, 'ws') + "/logs";
+      }
+      
+      // Add the IAM token as a query parameter
+      wsUrl += `?token=${authToken}`;
+
+      const newWs = new WebSocket(wsUrl);
 
       newWs.onopen = () => {
         console.log("Connected to logs websocket");
@@ -32,15 +59,15 @@ const CallInterface = () => {
         handleRealtimeEvent(data, setItems);
       };
 
-      newWs.onclose = () => {
-        console.log("Logs websocket disconnected");
+      newWs.onclose = (event) => {
+        console.log("Logs websocket disconnected", event.code, event.reason);
         setWs(null);
         setCallStatus("disconnected");
       };
 
       setWs(newWs);
     }
-  }, [allConfigsReady, ws]);
+  }, [allConfigsReady, ws, authToken]);
 
   return (
     <div className="h-screen bg-white flex flex-col">

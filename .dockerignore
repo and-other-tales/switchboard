@@ -1,1 +1,48 @@
+# Dependencies
+node_modules
+**/node_modules
+.npm
 .venv/
+
+# Build outputs
+**/.next
+**/out
+webapp/build
+webapp/.next
+websocket-server/dist/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Version control
+.git
+.gitignore
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Package locks (since we copy package.json directly and do npm ci)
+**/package-lock.json 
+
+# Misc
+.DS_Store
+*.pem

@@ -1,6 +1,6 @@
 # Deploying to Google Cloud Run
 
-This guide explains how to deploy the Switchboard application to Google Cloud Run.
+This guide explains how to deploy the Switchboard application to Google Cloud Run with IAM authentication.
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ The following environment variables are required for deployment:
 - `PUBLIC_URL`: The public URL of your Cloud Run service (optional, auto-detected)
 - `WEBSOCKET_URL`: URL for WebSocket connections (optional, defaults to PUBLIC_URL)
 
-> **Security Note**: The application now uses Google OAuth for authentication instead of basic HTTP authentication. This provides more secure authentication with features like single sign-on and multi-factor authentication.
+> **Security Note**: The application uses Google OAuth for user authentication and Google Cloud IAM for service-to-service authentication. This provides a secure authentication mechanism for both user access and service access.
 
 ## Build and Deploy
 
@@ -56,13 +56,74 @@ docker push gcr.io/[YOUR_PROJECT_ID]/switchboard
 gcloud run deploy switchboard \
   --image gcr.io/[YOUR_PROJECT_ID]/switchboard \
   --platform managed \
-  --allow-unauthenticated \
   --port 8080 \
   --region [YOUR_REGION] \
-  --set-env-vars="GOOGLE_CLIENT_ID=your_client_id,GOOGLE_CLIENT_SECRET=your_client_secret,NEXTAUTH_SECRET=your_random_secret,ALLOWED_DOMAINS=your_domain.com,OPENAI_API_KEY=your_openai_key,TWILIO_ACCOUNT_SID=your_twilio_sid,TWILIO_AUTH_TOKEN=your_twilio_token"
+  --ingress=all \
+  --set-env-vars="GOOGLE_CLIENT_ID=your_client_id,GOOGLE_CLIENT_SECRET=your_client_secret,NEXTAUTH_SECRET=your_random_secret,ALLOWED_DOMAINS=your_domain.com,OPENAI_API_KEY=your_openai_key,TWILIO_ACCOUNT_SID=your_twilio_sid,TWILIO_AUTH_TOKEN=your_twilio_token,NODE_ENV=production"
 ```
 
+> **Important**: Note that we've removed the `--allow-unauthenticated` flag to enable Google Cloud IAM authentication. We've also added `--ingress=all` to allow both internal and external traffic.
+
 > **Note**: The `NEXTAUTH_SECRET` is used to encrypt cookies and tokens. If not provided, a random value will be generated during container startup, but the value will change with each deployment, invalidating existing sessions.
+
+## Configuring IAM Permissions
+
+After deploying your service, you need to grant appropriate IAM permissions to the services or users that need to access it:
+
+### Grant access to a service account
+
+```bash
+gcloud run services add-iam-policy-binding switchboard \
+  --member=serviceAccount:your-service-account@your-project.iam.gserviceaccount.com \
+  --role=roles/run.invoker \
+  --region=[YOUR_REGION]
+```
+
+### Grant access to a user
+
+```bash
+gcloud run services add-iam-policy-binding switchboard \
+  --member=user:user@example.com \
+  --role=roles/run.invoker \
+  --region=[YOUR_REGION]
+```
+
+### Grant access to all authenticated users
+
+```bash
+gcloud run services add-iam-policy-binding switchboard \
+  --member=allAuthenticatedUsers \
+  --role=roles/run.invoker \
+  --region=[YOUR_REGION]
+```
+
+## Accessing the Application
+
+### User Access
+
+For users accessing the web interface, they will be redirected to Google's sign-in page for authentication. Only users with email addresses from domains specified in the `ALLOWED_DOMAINS` environment variable will be allowed to access the application (if configured).
+
+### Service-to-Service Access
+
+For service-to-service communication, you'll need to include an ID token in the request headers:
+
+```bash
+# Get an ID token for your service account
+TOKEN=$(gcloud auth print-identity-token --audiences=https://your-service.a.run.app)
+
+# Make a request with the token
+curl -H "Authorization: Bearer $TOKEN" https://your-service.a.run.app/endpoint
+```
+
+## WebSocket Connections
+
+To connect to the WebSocket server with IAM authentication, you'll need to include the ID token as a query parameter:
+
+```javascript
+// In your client code
+const token = await getIdToken(); // Implement this to get the ID token
+const ws = new WebSocket(`wss://your-service.a.run.app/logs?token=${token}`);
+```
 
 ## Automation with Cloud Build
 
@@ -87,11 +148,12 @@ steps:
         'managed',
         '--region',
         'us-central1',
-        '--allow-unauthenticated',
+        '--ingress',
+        'all',
         '--port',
         '8080',
         '--set-env-vars',
-        'GOOGLE_CLIENT_ID=$$GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET=$$GOOGLE_CLIENT_SECRET,NEXTAUTH_SECRET=$$NEXTAUTH_SECRET,ALLOWED_DOMAINS=$$ALLOWED_DOMAINS,OPENAI_API_KEY=$$OPENAI_API_KEY,TWILIO_ACCOUNT_SID=$$TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN=$$TWILIO_AUTH_TOKEN'
+        'GOOGLE_CLIENT_ID=$$GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET=$$GOOGLE_CLIENT_SECRET,NEXTAUTH_SECRET=$$NEXTAUTH_SECRET,ALLOWED_DOMAINS=$$ALLOWED_DOMAINS,OPENAI_API_KEY=$$OPENAI_API_KEY,TWILIO_ACCOUNT_SID=$$TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN=$$TWILIO_AUTH_TOKEN,NODE_ENV=production'
       ]
 images:
   - 'gcr.io/$PROJECT_ID/switchboard'
@@ -102,10 +164,6 @@ options:
 ```
 
 Then set up your secret environment variables in Secret Manager.
-
-## Accessing the Application
-
-After deployment, your application will be available at the Cloud Run URL. Users will be redirected to Google's sign-in page for authentication. Only users with email addresses from domains specified in the `ALLOWED_DOMAINS` environment variable will be allowed to access the application (if configured).
 
 ## Updating the Application
 

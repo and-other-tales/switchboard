@@ -15,6 +15,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // IAM token verification is now done on the server-side only in API routes
+  // For middleware, we'll rely on the NextAuth session
+  
+  // Check for user session token
   const token = await getToken({ req: request });
 
   // Redirect to login if not authenticated

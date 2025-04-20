@@ -17,7 +17,7 @@ WORKDIR /app
 COPY websocket-server/package*.json ./websocket-server/
 COPY webapp/package*.json ./webapp/
 # Install dependencies for both services
-RUN cd websocket-server && npm ci
+RUN cd websocket-server && npm install
 RUN cd webapp && npm install
 
 # Rebuild the source code only when needed
@@ -31,6 +31,9 @@ COPY --from=deps /app/webapp/node_modules ./webapp/node_modules
 # Copy source code
 COPY websocket-server ./websocket-server
 COPY webapp ./webapp
+
+# Ensure the src directory exists before building
+RUN mkdir -p /app/websocket-server/src
 
 # Build websocket-server
 RUN cd websocket-server && npm run build
@@ -54,6 +57,10 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /app/websocket-server/dist ./websocket-server/dist
 COPY --from=builder /app/websocket-server/src/twiml.xml ./websocket-server/dist/twiml.xml
 COPY --from=builder /app/websocket-server/package.json ./websocket-server/
+
+# Install websocket server dependencies
+WORKDIR /app/websocket-server
+RUN npm install --omit=dev
 
 # Copy Next.js standalone build
 COPY --from=builder /app/webapp/.next/standalone ./webapp
