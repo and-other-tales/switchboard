@@ -28,23 +28,25 @@ In Google Cloud Run, set the following environment variables:
 ```yaml
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/switchboard', '.']
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/switchboard-webapp', '-f', 'Dockerfile.webapp', '.']
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/switchboard']
+    args: ['push', 'gcr.io/$PROJECT_ID/switchboard-webapp']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/switchboard-websocket', '-f', 'Dockerfile.websocket', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/switchboard-websocket']
   - name: 'gcr.io/cloud-builders/gcloud'
     args: [
       'run', 'deploy', 'switchboard',
-      '--image', 'gcr.io/$PROJECT_ID/switchboard',
+      '--image', 'gcr.io/$PROJECT_ID/switchboard-webapp',
+      '--image', 'gcr.io/$PROJECT_ID/switchboard-websocket',
       '--platform', 'managed',
       '--allow-unauthenticated',
       '--region', 'europe-west4',
-      '--set-env-vars',
-      'OPENAI_API_KEY=$OPENAI_API_KEY,TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN'
     ]
-substitutions:
-  _OPENAI_API_KEY: 'YOUR_OPENAI_API_KEY'
-  _TWILIO_ACCOUNT_SID: 'YOUR_TWILIO_ACCOUNT_SID'
-  _TWILIO_AUTH_TOKEN: 'YOUR_TWILIO_AUTH_TOKEN'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
 ```
 
 2. Trigger the build and deployment using the following command:
@@ -62,18 +64,21 @@ gcloud auth login
 # Set your project ID
 gcloud config set project YOUR_PROJECT_ID
 
-# Build the container image locally
-docker build -t gcr.io/YOUR_PROJECT_ID/switchboard .
+# Build the container images locally
+docker build -t gcr.io/YOUR_PROJECT_ID/switchboard-webapp -f Dockerfile.webapp .
+docker build -t gcr.io/YOUR_PROJECT_ID/switchboard-websocket -f Dockerfile.websocket .
 
 # Push to Google Container Registry
-gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/switchboard
+gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/switchboard-webapp
+gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/switchboard-websocket
 
 # Deploy to Cloud Run
 gcloud run deploy switchboard \
-  --image gcr.io/YOUR_PROJECT_ID/switchboard \
+  --image gcr.io/YOUR_PROJECT_ID/switchboard-webapp \
+  --image gcr.io/YOUR_PROJECT_ID/switchboard-websocket \
   --platform managed \
   --allow-unauthenticated \
-  --region europe-wes4 \
+  --region europe-west4 \
   --set-env-vars="OPENAI_API_KEY=YOUR_OPENAI_API_KEY,TWILIO_ACCOUNT_SID=YOUR_TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN=YOUR_TWILIO_AUTH_TOKEN"
 ```
 
@@ -84,6 +89,6 @@ After deployment, get your Cloud Run service URL and update your Twilio phone nu
 
 ## Additional Notes
 
-- The application listens on port 8080 as required by Cloud Run
-- Both the webapp and websocket-server run in the same container
+- The application listens on ports 8080 and 8081 as required by Cloud Run
+- The webapp and websocket-server run in separate containers
 - The `PUBLIC_URL` is automatically set to your Cloud Run service URL if not specified
