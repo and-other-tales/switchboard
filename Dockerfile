@@ -5,6 +5,9 @@ WORKDIR /app
 # Copy all project files
 COPY . .
 
+# Copy the .next directory into the Docker image
+COPY .next .next
+
 # Make the start script executable
 RUN chmod +x start.sh
 
