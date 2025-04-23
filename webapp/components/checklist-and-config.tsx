@@ -20,6 +20,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// Replace window references with a safe approach that only runs on client
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
+};
+
 export default function ChecklistAndConfig({
   ready,
   setReady,
@@ -45,7 +53,13 @@ export default function ChecklistAndConfig({
   const [connectionLoading, setConnectionLoading] = useState(false);
 
   // Use the direct twiml endpoint
-  const appendedTwimlUrl = typeof window !== 'undefined' ? `${window.location.origin}/twiml` : "";
+  const [appendedTwimlUrl, setAppendedTwimlUrl] = useState('');
+  
+  useEffect(() => {
+    // Set this only after component mounts (client-side)
+    setAppendedTwimlUrl(`${getBaseUrl()}/twiml`);
+  }, []);
+
   const isWebhookMismatch =
     appendedTwimlUrl && currentVoiceUrl && appendedTwimlUrl !== currentVoiceUrl;
 
@@ -95,7 +109,7 @@ export default function ChecklistAndConfig({
         if (!publicUrl) {
           try {
             // Try from browser location first (for Cloud Run deployment)
-            const host = window.location.origin;
+            const host = getBaseUrl();
             setPublicUrl(host);
             
             // Alternatively, could try to fetch from the server
@@ -126,8 +140,8 @@ export default function ChecklistAndConfig({
 
   const updateWebhook = async () => {
     if (!currentNumberSid || !publicUrl) return;
-    // Use the current base URL with the direct twiml endpoint
-    const baseUrl = window.location.origin;
+    // Use getBaseUrl() instead of direct window reference
+    const baseUrl = getBaseUrl();
     const webhookUrl = `${baseUrl}/twiml`;
     try {
       setWebhookLoading(true);
@@ -274,7 +288,7 @@ export default function ChecklistAndConfig({
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
               <Input 
-                value={`${window.location.origin}/twiml`}
+                value={`${getBaseUrl()}/twiml`}
                 disabled
                 className="w-full" 
               />

@@ -43,6 +43,14 @@ const nextConfig = {
         destination: `${process.env.WEBSOCKET_SERVER_URL || 'http://localhost:8081'}/realtime/:path*`,
       },
     ];
+  },
+  // Disable static optimization for certain paths and add output configuration
+  output: 'standalone',
+  experimental: {
+    // This ensures API routes aren't pre-rendered during build
+    outputFileTracingExcludes: {
+      '/api/**/*': true
+    }
   }
 };
 

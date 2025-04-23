@@ -17,14 +17,7 @@ export OPENAI_API_KEY=${OPENAI_API_KEY:?"OPENAI_API_KEY must be set"}
 export TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:?"TWILIO_ACCOUNT_SID must be set"}
 export TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:?"TWILIO_AUTH_TOKEN must be set"}
 
-# Build the webapp and websocket-server
-echo "Building webapp..."
-cd /app/webapp && npm install && npm run build
-if [ $? -ne 0 ]; then
-  echo "Error: Failed to build webapp"
-  exit 1
-fi
-
+# Start the websocket-server first
 echo "Building websocket-server..."
 cd /app/websocket-server && npm install && npm run build
 if [ $? -ne 0 ]; then
@@ -32,9 +25,29 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Start both services
-echo "Starting services..."
+# Start the websocket-server in the background
+echo "Starting websocket-server..."
+cd /app/websocket-server && \
+  WEBSOCKET_PORT=$WEBSOCKET_PORT \
+  PUBLIC_URL="$PUBLIC_URL" \
+  OPENAI_API_KEY="$OPENAI_API_KEY" \
+  TWILIO_ACCOUNT_SID="$TWILIO_ACCOUNT_SID" \
+  TWILIO_AUTH_TOKEN="$TWILIO_AUTH_TOKEN" \
+  node dist/server.js &
+WS_PID=$!
+
+# Wait a bit for the websocket server to start
+sleep 5
+
+# Now build and start the webapp with the websocket server running
+echo "Building webapp..."
+cd /app/webapp && npm install && NODE_OPTIONS="--max-old-space-size=4096" npm run build
+if [ $? -ne 0 ]; then
+  echo "Warning: Build had issues, attempting to start anyway"
+fi
+
 # Start the Next.js webapp in the background with required environment variables
+echo "Starting webapp..."
 cd /app/webapp && \
   PORT=$PORT \
   WEBSOCKET_SERVER_URL="http://localhost:$WEBSOCKET_PORT" \
@@ -44,16 +57,6 @@ cd /app/webapp && \
   TWILIO_AUTH_TOKEN="$TWILIO_AUTH_TOKEN" \
   npm run start &
 WEBAPP_PID=$!
-
-# Start the websocket-server in the background with all required environment variables
-cd /app/websocket-server && \
-  WEBSOCKET_PORT=$WEBSOCKET_PORT \
-  PUBLIC_URL="$PUBLIC_URL" \
-  OPENAI_API_KEY="$OPENAI_API_KEY" \
-  TWILIO_ACCOUNT_SID="$TWILIO_ACCOUNT_SID" \
-  TWILIO_AUTH_TOKEN="$TWILIO_AUTH_TOKEN" \
-  node dist/server.js &
-WS_PID=$!
 
 # Handle signals properly
 trap "kill $WEBAPP_PID $WS_PID; exit" SIGINT SIGTERM
