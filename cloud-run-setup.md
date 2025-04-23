@@ -37,7 +37,7 @@ steps:
       '--image', 'gcr.io/$PROJECT_ID/switchboard',
       '--platform', 'managed',
       '--allow-unauthenticated',
-      '--region', 'us-central1',
+      '--region', 'europe-west4',
       '--set-env-vars',
       'OPENAI_API_KEY=$OPENAI_API_KEY,TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN'
     ]
@@ -73,7 +73,7 @@ gcloud run deploy switchboard \
   --image gcr.io/YOUR_PROJECT_ID/switchboard \
   --platform managed \
   --allow-unauthenticated \
-  --region us-central1 \
+  --region europe-wes4 \
   --set-env-vars="OPENAI_API_KEY=YOUR_OPENAI_API_KEY,TWILIO_ACCOUNT_SID=YOUR_TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN=YOUR_TWILIO_AUTH_TOKEN"
 ```
 
