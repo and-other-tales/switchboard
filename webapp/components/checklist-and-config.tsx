@@ -36,7 +36,7 @@ export default function ChecklistAndConfig({
   const [currentNumberSid, setCurrentNumberSid] = useState("");
   const [currentVoiceUrl, setCurrentVoiceUrl] = useState("");
 
-  const [publicUrl, setPublicUrl] = useState("");
+  const [publicUrl, setPublicUrl] = useState(process.env.PUBLIC_URL || "");
   const [localServerUp, setLocalServerUp] = useState(false);
   const [publicUrlAccessible, setPublicUrlAccessible] = useState(false);
 
@@ -223,7 +223,7 @@ export default function ChecklistAndConfig({
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
               <Input 
-                value={publicUrl} 
+                value={process.env.PUBLIC_URL + ":8081"} 
                 onChange={(e) => setPublicUrl(e.target.value)} 
                 placeholder="Public URL (from Cloud Run)"
               />
@@ -232,7 +232,6 @@ export default function ChecklistAndConfig({
               <Button
                 variant="outline"
                 onClick={checkNgrok}
-                disabled={ngrokLoading || !localServerUp || !publicUrl}
                 className="w-full"
               >
                 {ngrokLoading ? (
@@ -253,7 +252,7 @@ export default function ChecklistAndConfig({
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
               <Input 
-                value={currentVoiceUrl} 
+                value={process.env.PUBLIC_URL} 
                 onChange={(e) => setCurrentVoiceUrl(e.target.value)} 
                 className="w-full" 
               />
