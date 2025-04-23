@@ -7,6 +7,11 @@ export PORT=${PORT:-8080}
 export WEBSOCKET_PORT=${WEBSOCKET_PORT:-8081}
 export PUBLIC_URL=${PUBLIC_URL:-"https://${K_SERVICE:-localhost}.${K_REVISION:-local}.${K_REGION:-local}.run.app"}
 
+# Set environment variables from OS environment variables
+export OPENAI_API_KEY=${OPENAI_API_KEY}
+export TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+export TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+
 # Build the webapp and websocket-server
 echo "Building webapp..."
 cd /app/webapp && npm install && npm run build
