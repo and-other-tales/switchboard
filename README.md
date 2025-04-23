@@ -84,44 +84,6 @@ npm run dev
 
 ## Detailed Auth & Env
 
-### Google OAuth
-
-This application uses Google OAuth for authentication. To set it up:
-
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the Google OAuth API
-4. Create OAuth credentials (OAuth client ID)
-   - Application type: Web application
-   - Name: Switchboard (or your preferred name)
-   - Authorized JavaScript origins: 
-     - For local development: `http://localhost:8080`
-     - For production: Your Cloud Run service URL (e.g., `https://yourapp.run.app`)
-   - Authorized redirect URIs: 
-     - For local development: `http://localhost:8080/api/auth/callback/google`
-     - For production: `https://yourapp.run.app/api/auth/callback/google`
-5. Copy the Client ID and Client Secret
-
-#### Local Development
-For local development, add them to `webapp/.env.local`:
-```
-GOOGLE_CLIENT_ID=your_client_id_here
-GOOGLE_CLIENT_SECRET=your_client_secret_here
-NEXTAUTH_URL=http://localhost:8080
-NEXTAUTH_SECRET=generate_a_random_string_here
-```
-
-#### Production (Cloud Run)
-When deploying to Cloud Run, simply add the Google OAuth credentials as environment variables:
-```
-GOOGLE_CLIENT_ID=your_client_id_here
-GOOGLE_CLIENT_SECRET=your_client_secret_here
-```
-
-The application will automatically configure `NEXTAUTH_URL` and generate a secure `NEXTAUTH_SECRET` if not provided.
-
-Note: The Twilio webhook routes are not protected by OAuth authentication to ensure proper communication between Twilio and the application.
-
 ### OpenAI & Twilio
 
 Set your credentials in `webapp/.env` and `websocket-server` - see `webapp/.env.example` and `websocket-server.env.example` for reference.
