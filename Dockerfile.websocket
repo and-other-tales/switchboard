@@ -11,8 +11,8 @@ RUN cd /app/websocket-server && npm install
 # Build the websocket-server
 RUN cd /app/websocket-server && npm run build
 
-# Expose port 8081
-EXPOSE 8081
+# Expose port
+EXPOSE ${PORT}
 
 # Command to start the websocket-server
 CMD ["npm", "run", "start", "--prefix", "/app/websocket-server"]

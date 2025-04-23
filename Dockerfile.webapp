@@ -11,8 +11,8 @@ RUN cd /app/webapp && npm install
 # Build the webapp
 RUN cd /app/webapp && npm run build
 
-# Expose port 8080
-EXPOSE 8080
+# Expose port
+EXPOSE ${PORT}
 
 # Command to start the webapp
 CMD ["npm", "run", "start", "--prefix", "/app/webapp"]
