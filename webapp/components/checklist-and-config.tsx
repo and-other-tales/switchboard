@@ -36,7 +36,7 @@ export default function ChecklistAndConfig({
   const [currentNumberSid, setCurrentNumberSid] = useState("");
   const [currentVoiceUrl, setCurrentVoiceUrl] = useState("");
 
-  const [publicUrl, setPublicUrl] = useState(process.env.PUBLIC_URL || "");
+  const [publicUrl, setPublicUrl] = useState(process.env.PUBLIC_URL || "http://localhost:8081");
   const [localServerUp, setLocalServerUp] = useState(false);
   const [publicUrlAccessible, setPublicUrlAccessible] = useState(false);
 
@@ -47,6 +47,22 @@ export default function ChecklistAndConfig({
   const appendedTwimlUrl = publicUrl ? `${publicUrl}/twiml` : "";
   const isWebhookMismatch =
     appendedTwimlUrl && currentVoiceUrl && appendedTwimlUrl !== currentVoiceUrl;
+
+  // Load saved configuration on component mount
+  useEffect(() => {
+    try {
+      const savedConfig = localStorage.getItem('switchboardConfig');
+      if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        if (config.publicUrl) {
+          setPublicUrl(config.publicUrl);
+        }
+        // Don't automatically set ready to true here, let the checklist verify first
+      }
+    } catch (err) {
+      console.error("Error loading saved configuration:", err);
+    }
+  }, []);
 
   useEffect(() => {
     let polling = true;
@@ -108,7 +124,8 @@ export default function ChecklistAndConfig({
   }, [currentNumberSid, setSelectedPhoneNumber, publicUrl]);
 
   const updateWebhook = async () => {
-    if (!currentNumberSid || !currentVoiceUrl) return;
+    if (!currentNumberSid || !publicUrl) return;
+    const webhookUrl = `${publicUrl}/twiml`;
     try {
       setWebhookLoading(true);
       const res = await fetch("/api/twilio/numbers", {
@@ -116,11 +133,11 @@ export default function ChecklistAndConfig({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phoneNumberSid: currentNumberSid,
-          voiceUrl: currentVoiceUrl,
+          voiceUrl: webhookUrl,
         }),
       });
       if (!res.ok) throw new Error("Failed to update webhook");
-      setCurrentVoiceUrl(currentVoiceUrl);
+      setCurrentVoiceUrl(webhookUrl);
     } catch (err) {
       console.error(err);
     } finally {
@@ -134,7 +151,8 @@ export default function ChecklistAndConfig({
     let success = false;
     for (let i = 0; i < 5; i++) {
       try {
-        const resTest = await fetch(publicUrl + "/public-url");
+        // Use the current publicUrl value from the textfield
+        const resTest = await fetch(`${publicUrl}/public-url`);
         if (resTest.ok) {
           setPublicUrlAccessible(true);
           setLocalServerUp(true);
@@ -252,15 +270,15 @@ export default function ChecklistAndConfig({
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
               <Input 
-                value={currentVoiceUrl} 
-                onChange={(e) => setCurrentVoiceUrl(e.target.value)} 
+                value={`${publicUrl}/twiml`}
+                disabled
                 className="w-full" 
               />
             </div>
             <div className="flex-1">
               <Button
                 onClick={updateWebhook}
-                disabled={webhookLoading || !currentVoiceUrl}
+                disabled={webhookLoading || !publicUrl}
                 className="w-full"
               >
                 {webhookLoading ? (
@@ -300,12 +318,22 @@ export default function ChecklistAndConfig({
   }, [localServerUp, ready]);
 
   useEffect(() => {
-    if (!allChecksPassed) {
+    // Only set to false if not already false, don't affect the value when checks pass
+    if (!allChecksPassed && ready) {
       setReady(false);
     }
-  }, [allChecksPassed, setReady]);
+  }, [allChecksPassed, setReady, ready]);
 
-  const handleDone = () => setReady(true);
+  const handleDone = () => {
+    // Save configuration persistently
+    localStorage.setItem('switchboardConfig', JSON.stringify({
+      ready: true,
+      selectedPhoneNumber,
+      publicUrl,
+      lastSaved: new Date().toISOString()
+    }));
+    setReady(true);
+  };
 
   return (
     <Dialog open={!ready}>
