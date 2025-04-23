@@ -12,14 +12,7 @@ steps:
       '--port', '8080',
       '--memory', '512Mi',
       '--region', 'europe-west4',
-      '--set-env-vars', 
-      'OPENAI_API_KEY=${_OPENAI_API_KEY},TWILIO_ACCOUNT_SID=${_TWILIO_ACCOUNT_SID},TWILIO_AUTH_TOKEN=${_TWILIO_AUTH_TOKEN}'
     ]
-
-substitutions:
-  _OPENAI_API_KEY: ''
-  _TWILIO_ACCOUNT_SID: ''
-  _TWILIO_AUTH_TOKEN: ''
 
 options:
   logging: CLOUD_LOGGING_ONLY
