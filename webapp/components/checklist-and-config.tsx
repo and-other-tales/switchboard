@@ -44,7 +44,8 @@ export default function ChecklistAndConfig({
   const [webhookLoading, setWebhookLoading] = useState(false);
   const [connectionLoading, setConnectionLoading] = useState(false);
 
-  const appendedTwimlUrl = publicUrl ? `${publicUrl}/twiml` : "";
+  // Use the direct twiml endpoint
+  const appendedTwimlUrl = typeof window !== 'undefined' ? `${window.location.origin}/twiml` : "";
   const isWebhookMismatch =
     appendedTwimlUrl && currentVoiceUrl && appendedTwimlUrl !== currentVoiceUrl;
 
@@ -125,7 +126,9 @@ export default function ChecklistAndConfig({
 
   const updateWebhook = async () => {
     if (!currentNumberSid || !publicUrl) return;
-    const webhookUrl = `${publicUrl}/twiml`;
+    // Use the current base URL with the direct twiml endpoint
+    const baseUrl = window.location.origin;
+    const webhookUrl = `${baseUrl}/twiml`;
     try {
       setWebhookLoading(true);
       const res = await fetch("/api/twilio/numbers", {
@@ -151,9 +154,10 @@ export default function ChecklistAndConfig({
     let success = false;
     for (let i = 0; i < 5; i++) {
       try {
-        // Use the current publicUrl value from the textfield
-        const resTest = await fetch(`${publicUrl}/public-url`);
+        // Use the direct path to the public-url endpoint
+        const resTest = await fetch(`/public-url`);
         if (resTest.ok) {
+          const data = await resTest.json();
           setPublicUrlAccessible(true);
           setLocalServerUp(true);
           success = true;
@@ -270,7 +274,7 @@ export default function ChecklistAndConfig({
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
               <Input 
-                value={`${publicUrl}/twiml`}
+                value={`${window.location.origin}/twiml`}
                 disabled
                 className="w-full" 
               />

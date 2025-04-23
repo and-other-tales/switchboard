@@ -34,8 +34,15 @@ fi
 
 # Start both services
 echo "Starting services..."
-# Start the Next.js webapp in the background
-cd /app/webapp && PORT=$PORT npm run start &
+# Start the Next.js webapp in the background with required environment variables
+cd /app/webapp && \
+  PORT=$PORT \
+  WEBSOCKET_SERVER_URL="http://localhost:$WEBSOCKET_PORT" \
+  PUBLIC_URL="$PUBLIC_URL" \
+  OPENAI_API_KEY="$OPENAI_API_KEY" \
+  TWILIO_ACCOUNT_SID="$TWILIO_ACCOUNT_SID" \
+  TWILIO_AUTH_TOKEN="$TWILIO_AUTH_TOKEN" \
+  npm run start &
 WEBAPP_PID=$!
 
 # Start the websocket-server in the background with all required environment variables
