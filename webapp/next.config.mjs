@@ -5,10 +5,6 @@ const nextConfig = {
     TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || "",
     WEBSOCKET_SERVER_URL: process.env.WEBSOCKET_SERVER_URL || "http://localhost:8081"
   },
-  // Set port to 8080 for Google Cloud Run
-  serverOptions: {
-    port: 8080
-  },
   // Fix for window is not defined error
   reactStrictMode: true,
   compiler: {
@@ -47,9 +43,9 @@ const nextConfig = {
   // Disable static optimization for certain paths and add output configuration
   output: 'standalone',
   experimental: {
-    // This ensures API routes aren't pre-rendered during build
+    // Fix invalid value for outputFileTracingExcludes
     outputFileTracingExcludes: {
-      '/api/**/*': true
+      '/api/**/*': []
     }
   }
 };
