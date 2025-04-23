@@ -1,0 +1,18 @@
+FROM node:22-slim
+
+WORKDIR /app
+
+# Copy the websocket-server directory
+COPY websocket-server /app/websocket-server
+
+# Install dependencies
+RUN cd /app/websocket-server && npm install
+
+# Build the websocket-server
+RUN cd /app/websocket-server && npm run build
+
+# Expose port 8081
+EXPOSE 8081
+
+# Command to start the websocket-server
+CMD ["npm", "run", "start", "--prefix", "/app/websocket-server"]
