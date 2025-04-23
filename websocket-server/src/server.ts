@@ -18,11 +18,6 @@ const PORT = parseInt(process.env.WEBSOCKET_PORT || process.env.PORT || "8081", 
 const PUBLIC_URL = process.env.PUBLIC_URL || "";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
-if (!OPENAI_API_KEY) {
-  console.error("OPENAI_API_KEY environment variable is required");
-  process.exit(1);
-}
-
 const app = express();
 app.use(cors());
 const server = http.createServer(app);
