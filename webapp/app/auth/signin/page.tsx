@@ -1,8 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { signIn } from "next-auth/react";
 
 export default function SignIn() {
   return (
@@ -15,12 +13,7 @@ export default function SignIn() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button
-            className="w-full"
-            onClick={() => signIn("google", { callbackUrl: "/" })}
-          >
-            Sign in with Google
-          </Button>
+          {/* Sign-in button removed */}
         </CardContent>
       </Card>
     </div>
