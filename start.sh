@@ -15,9 +15,17 @@ export TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
 # Build the webapp and websocket-server
 echo "Building webapp..."
 cd /app/webapp && npm install && npm run build
+if [ $? -ne 0 ]; then
+  echo "Error: Failed to build webapp"
+  exit 1
+fi
 
 echo "Building websocket-server..."
 cd /app/websocket-server && npm install && npm run build
+if [ $? -ne 0 ]; then
+  echo "Error: Failed to build websocket-server"
+  exit 1
+fi
 
 # Start both services
 echo "Starting services..."
