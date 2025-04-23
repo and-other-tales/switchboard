@@ -75,4 +75,5 @@ wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
 
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`PUBLIC_URL is set to: ${PUBLIC_URL}`);
 });
