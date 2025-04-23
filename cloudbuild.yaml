@@ -10,7 +10,7 @@ steps:
       '--platform', 'managed',
       '--allow-unauthenticated',
       '--port', '8080',
-      '--memory', '1Gi',
+      '--memory', '2Gi',
       '--region', 'europe-west4',
     ]
 
