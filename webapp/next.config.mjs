@@ -9,6 +9,12 @@ const nextConfig = {
   serverOptions: {
     port: 8080
   },
+  // Fix for window is not defined error
+  reactStrictMode: true,
+  compiler: {
+    // Enables the styled-components SWC transform
+    styledComponents: true
+  },
   // Add support for WebSocket proxying
   async rewrites() {
     return [

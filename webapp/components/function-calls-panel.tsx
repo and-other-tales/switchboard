@@ -40,7 +40,7 @@ const FunctionCallsPanel: React.FC<FunctionCallsPanelProps> = ({
   };
 
   const handleSubmit = (call: Item) => {
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (typeof window === "undefined" || !ws || ws.readyState !== WebSocket.OPEN) return;
     const call_id = call.call_id || "";
     ws.send(
       JSON.stringify({

@@ -18,7 +18,8 @@ const CallInterface = () => {
   const [ws, setWs] = useState<WebSocket | null>(null);
 
   useEffect(() => {
-    if (allConfigsReady && !ws) {
+    // Only run in browser environment
+    if (typeof window !== "undefined" && allConfigsReady && !ws) {
       // Use the same origin with wss/ws protocol for the WebSocket connection
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/logs`;
@@ -61,7 +62,7 @@ const CallInterface = () => {
             <SessionConfigurationPanel
               callStatus={callStatus}
               onSave={(config) => {
-                if (ws && ws.readyState === WebSocket.OPEN) {
+                if (typeof window !== "undefined" && ws && ws.readyState === WebSocket.OPEN) {
                   const updateEvent = {
                     type: "session.update",
                     session: {
