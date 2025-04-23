@@ -108,7 +108,7 @@ export default function ChecklistAndConfig({
   }, [currentNumberSid, setSelectedPhoneNumber, publicUrl]);
 
   const updateWebhook = async () => {
-    if (!currentNumberSid || !appendedTwimlUrl) return;
+    if (!currentNumberSid || !currentVoiceUrl) return;
     try {
       setWebhookLoading(true);
       const res = await fetch("/api/twilio/numbers", {
@@ -116,11 +116,11 @@ export default function ChecklistAndConfig({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phoneNumberSid: currentNumberSid,
-          voiceUrl: appendedTwimlUrl,
+          voiceUrl: currentVoiceUrl,
         }),
       });
       if (!res.ok) throw new Error("Failed to update webhook");
-      setCurrentVoiceUrl(appendedTwimlUrl);
+      setCurrentVoiceUrl(currentVoiceUrl);
     } catch (err) {
       console.error(err);
     } finally {
@@ -223,7 +223,7 @@ export default function ChecklistAndConfig({
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
               <Input 
-                value={publicUrl + ":8081"} 
+                value={publicUrl} 
                 onChange={(e) => setPublicUrl(e.target.value)} 
                 placeholder="Public URL (from Cloud Run)"
               />
@@ -252,7 +252,7 @@ export default function ChecklistAndConfig({
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
               <Input 
-                value={publicUrl} 
+                value={currentVoiceUrl} 
                 onChange={(e) => setCurrentVoiceUrl(e.target.value)} 
                 className="w-full" 
               />
@@ -260,7 +260,7 @@ export default function ChecklistAndConfig({
             <div className="flex-1">
               <Button
                 onClick={updateWebhook}
-                disabled={webhookLoading || !publicUrl}
+                disabled={webhookLoading || !currentVoiceUrl}
                 className="w-full"
               >
                 {webhookLoading ? (
