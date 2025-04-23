@@ -10,12 +10,6 @@ export OPENAI_API_KEY=${OPENAI_API_KEY}
 export TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
 export TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
 
-# Set OAuth environment variables
-export GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-export GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-export NEXTAUTH_URL=${NEXTAUTH_URL:-$PUBLIC_URL}
-export NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-$(openssl rand -base64 32)}
-
 # Build the webapp and websocket-server
 echo "Building webapp..."
 cd /app/webapp && npm install && npm run build
