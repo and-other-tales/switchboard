@@ -74,21 +74,25 @@ export default function ChecklistAndConfig({
           setSelectedPhoneNumber(selected.friendlyName || "");
         }
 
-        // 3. Check local server & public URL
-        let foundPublicUrl = "";
-        try {
-          const resLocal = await fetch("http://localhost:8081/public-url");
-          if (resLocal.ok) {
-            const pubData = await resLocal.json();
-            foundPublicUrl = pubData?.publicUrl || "";
-            setLocalServerUp(true);
-            setPublicUrl(foundPublicUrl);
-          } else {
-            throw new Error("Local server not responding");
+        // 3. Try to get public URL if not already set
+        if (!publicUrl) {
+          try {
+            // Try from browser location first (for Cloud Run deployment)
+            const host = window.location.origin;
+            setPublicUrl(host);
+            
+            // Alternatively, could try to fetch from the server
+            const apiUrl = "/api/webhook-local"; // Could create this endpoint to return the public URL
+            res = await fetch(apiUrl);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.publicUrl) {
+                setPublicUrl(data.publicUrl);
+              }
+            }
+          } catch (err) {
+            console.error("Error fetching public URL:", err);
           }
-        } catch {
-          setLocalServerUp(false);
-          setPublicUrl("");
         }
       } catch (err) {
         console.error(err);
@@ -101,7 +105,7 @@ export default function ChecklistAndConfig({
       polling = false;
       clearInterval(intervalId);
     };
-  }, [currentNumberSid, setSelectedPhoneNumber]);
+  }, [currentNumberSid, setSelectedPhoneNumber, publicUrl]);
 
   const updateWebhook = async () => {
     if (!currentNumberSid || !appendedTwimlUrl) return;
@@ -125,7 +129,7 @@ export default function ChecklistAndConfig({
   };
 
   const checkNgrok = async () => {
-    if (!localServerUp || !publicUrl) return;
+    if (!publicUrl) return;
     setNgrokLoading(true);
     let success = false;
     for (let i = 0; i < 5; i++) {
@@ -133,6 +137,7 @@ export default function ChecklistAndConfig({
         const resTest = await fetch(publicUrl + "/public-url");
         if (resTest.ok) {
           setPublicUrlAccessible(true);
+          setLocalServerUp(true);
           success = true;
           break;
         }
@@ -211,19 +216,17 @@ export default function ChecklistAndConfig({
           ),
       },
       {
-        label: "Start local WebSocket server",
+        label: "WebSocket server",
         done: localServerUp,
-        description: "cd websocket-server && npm run dev",
-        field: null,
-      },
-      {
-        label: "Start ngrok",
-        done: publicUrlAccessible,
-        description: "Then set ngrok URL in websocket-server/.env",
+        description: "Cloud Run server running on ports 8080/8081",
         field: (
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
-              <Input value={publicUrl} disabled />
+              <Input 
+                value={publicUrl} 
+                onChange={(e) => setPublicUrl(e.target.value)} 
+                placeholder="Public URL (from Cloud Run)"
+              />
             </div>
             <div className="flex-1">
               <Button
@@ -235,7 +238,7 @@ export default function ChecklistAndConfig({
                 {ngrokLoading ? (
                   <Loader2 className="mr-2 h-4 animate-spin" />
                 ) : (
-                  "Check ngrok"
+                  "Check Connection"
                 )}
               </Button>
             </div>
@@ -249,12 +252,16 @@ export default function ChecklistAndConfig({
         field: (
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
-              <Input value={currentVoiceUrl} disabled className="w-full" />
+              <Input 
+                value={currentVoiceUrl} 
+                onChange={(e) => setCurrentVoiceUrl(e.target.value)} 
+                className="w-full" 
+              />
             </div>
             <div className="flex-1">
               <Button
                 onClick={updateWebhook}
-                disabled={webhookLoading}
+                disabled={webhookLoading || !publicUrl}
                 className="w-full"
               >
                 {webhookLoading ? (

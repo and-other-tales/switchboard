@@ -1,52 +1,26 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
+// Using environment variables directly from process.env
+// These will be pulled from Cloud Run environment variables
 const handler = NextAuth({
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code",
-          // Request id_token from Google OAuth
-          scope: "openid email profile"
-        }
-      }
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
   ],
-  callbacks: {
-    async jwt({ token, account }) {
-      // Persist the ID token to the token for IAM authentication
-      if (account) {
-        token.id_token = account.id_token;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      // Add ID token to session for client-side use
-      // @ts-ignore - id_token is not in type definition
-      session.id_token = token.id_token;
-      return session;
-    },
-    async signIn({ account, profile }) {
-      if (account?.provider === "google") {
-        // Optional: Restrict to specific domains
-        if (process.env.ALLOWED_DOMAINS) {
-          const email = profile?.email as string;
-          const domains = process.env.ALLOWED_DOMAINS.split(",");
-          return domains.some(domain => email.endsWith(`@${domain}`));
-        }
-        return true;
-      }
-      return true;
-    },
-  },
   pages: {
     signIn: "/auth/signin",
-    error: "/auth/error",
+  },
+  callbacks: {
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
   },
 });
 

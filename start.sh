@@ -1,51 +1,40 @@
-#!/bin/sh
-set -e
+#!/bin/bash
 
-# Check for required OAuth environment variables
-if [ -z "$GOOGLE_CLIENT_ID" ] || [ -z "$GOOGLE_CLIENT_SECRET" ]; then
-  echo "Warning: GOOGLE_CLIENT_ID and/or GOOGLE_CLIENT_SECRET not set."
-  echo "Setting test values for local development - DO NOT USE IN PRODUCTION!"
-  export GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-"TEST_CLIENT_ID"}
-  export GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-"TEST_CLIENT_SECRET"}
-fi
+# Entrypoint script for Google Cloud Run deployment
 
-# Set NEXTAUTH_URL if not provided (required for NextAuth.js)
-if [ -z "$NEXTAUTH_URL" ]; then
-  export NEXTAUTH_URL=${PUBLIC_URL}
-  echo "NEXTAUTH_URL set to: $NEXTAUTH_URL"
-fi
+# Set environment variables from Cloud Run environment if not already set
+export PORT=${PORT:-8080}
+export WEBSOCKET_PORT=${WEBSOCKET_PORT:-8081}
+export PUBLIC_URL=${PUBLIC_URL:-"https://${K_SERVICE:-localhost}.${K_REVISION:-local}.${K_REGION:-local}.run.app"}
+export OPENAI_API_KEY=${OPENAI_API_KEY}
+export TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+export TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
 
-# Set NEXTAUTH_SECRET if not provided (required for NextAuth.js)
-if [ -z "$NEXTAUTH_SECRET" ]; then
-  if [ -z "$NEXTAUTH_SECRET_SEED" ]; then
-    echo "Warning: NEXTAUTH_SECRET not set. Using a random value."
-    export NEXTAUTH_SECRET=$(openssl rand -base64 32)
-  else
-    echo "Generating NEXTAUTH_SECRET from seed value."
-    export NEXTAUTH_SECRET=$(echo $NEXTAUTH_SECRET_SEED | openssl dgst -sha256 -binary | openssl base64)
-  fi
-  echo "NEXTAUTH_SECRET has been set."
-fi
+# Set OAuth environment variables
+export GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+export GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+export NEXTAUTH_URL=${NEXTAUTH_URL:-$PUBLIC_URL}
+export NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-$(openssl rand -base64 32)}
 
-echo "Google OAuth authentication configured"
+# Build the webapp and websocket-server
+echo "Building webapp..."
+cd /app/webapp && npm install && npm run build
 
-# Generate and export PUBLIC_URL for Cloud Run
-if [ -z "$PUBLIC_URL" ]; then
-  export PUBLIC_URL=${K_SERVICE:+https://$K_SERVICE.$K_REGION-a.run.app}
-  echo "PUBLIC_URL auto-detected as: $PUBLIC_URL"
-fi
+echo "Building websocket-server..."
+cd /app/websocket-server && npm install && npm run build
 
-# Set WEBSOCKET_URL to point to the same host
-if [ -z "$WEBSOCKET_URL" ]; then
-  export WEBSOCKET_URL=$PUBLIC_URL
-  echo "WEBSOCKET_URL set to: $WEBSOCKET_URL"
-fi
+# Start both services
+echo "Starting services..."
+# Start the Next.js webapp in the background
+cd /app/webapp && npm run start &
+WEBAPP_PID=$!
 
-# Log environment setup
-echo "Starting services on port 8080..."
-echo "WebSocket server will run on port 8081 internally"
-echo "Next.js app will run on port 3000 internally"
-echo "Nginx will proxy all requests on port 8080"
+# Start the websocket-server in the background
+cd /app/websocket-server && node dist/server.js &
+WS_PID=$!
 
-# Start all services using supervisord
-exec /usr/bin/supervisord -c /etc/supervisord.conf
+# Handle signals properly
+trap "kill $WEBAPP_PID $WS_PID; exit" SIGINT SIGTERM
+
+# Keep the container running
+wait $WEBAPP_PID $WS_PID
