@@ -6,15 +6,18 @@ Combine OpenAI's Realtime API and Twilio's phone calling capability to build an 
 
 ## Quick Setup
 
-Open three terminal windows:
+Open two terminal windows:
 
 | Terminal | Purpose                       | Quick Reference (see below for more) |
 | -------- | ----------------------------- | ------------------------------------ |
 | 1        | To run the `webapp`           | `npm run dev`                        |
 | 2        | To run the `websocket-server` | `npm run dev`                        |
-| 3        | To run `ngrok`                | `ngrok http 8081`                    |
 
-Make sure all vars in `webapp/.env` and `websocket-server/.env` are set correctly. See [full setup](#full-setup) section for more.
+Make sure all required environment variables are set or add them to `webapp/.env` and `websocket-server/.env`. Required variables:
+- `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` for the webapp
+- `OPENAI_API_KEY` and `PUBLIC_URL` for the websocket-server
+
+See [full setup](#full-setup) section for more.
 
 ## Overview
 
@@ -39,15 +42,13 @@ Twilio uses TwiML (a form of XML) to specify how to handle a phone call. When a 
 </Response>
 ```
 
-We use `ngrok` to make our server reachable by Twilio.
-
 ### Life of a phone call
 
 Setup
 
-1. We run ngrok to make our server reachable by Twilio
-1. We set the Twilio webhook to our ngrok address
-1. Frontend connects to the backend (`wss://[your_backend]/logs`), ready for a call
+1. The application is deployed to a publicly accessible URL (Cloud Run)
+2. We set the Twilio webhook to our Cloud Run service URL
+3. Frontend connects to the backend (`wss://[your_backend]/logs`), ready for a call
 
 Call
 
@@ -88,21 +89,13 @@ npm run dev
 
 Set your credentials in `webapp/.env` and `websocket-server` - see `webapp/.env.example` and `websocket-server.env.example` for reference.
 
-### Ngrok
+### Public URL
 
-Twilio needs to be able to reach your websocket server. If you're running it locally, your ports are inaccessible by default. [ngrok](https://ngrok.com/) can make them temporarily accessible.
+Twilio needs to be able to reach your server through a public URL. When deployed to Google Cloud Run, your application will be accessible through a public URL provided by Cloud Run.
 
-We have set the `websocket-server` to run on port `8081` by default, so that is the port we will be forwarding.
+Set the `PUBLIC_URL` environment variable to your Cloud Run service URL. This will be used by the websocket server to determine the correct WebSocket URL to provide to Twilio.
 
-```shell
-ngrok http 8081
-```
-
-Make note of the `Forwarding` URL. (e.g. `https://54c5-35-170-32-42.ngrok-free.app`)
-
-### Websocket URL
-
-Your server should now be accessible at the `Forwarding` URL when run, so set the `PUBLIC_URL` in `websocket-server/.env`. See `websocket-server/.env.example` for reference.
+The application is configured to run on port `8080` on Cloud Run by default.
 
 # Additional Notes
 

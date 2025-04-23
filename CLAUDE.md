@@ -8,11 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Lint Commands
 - Webapp: `npm run lint` - Run ESLint
+- Websocket Server: TypeScript compilation serves as basic linting
+
+## Test Commands
+- No formal test framework implemented currently
 
 ## Code Style Guidelines
 - Indentation: 2 spaces
 - Imports: Group by external, built-in, internal; use double quotes
-- Types: Use TypeScript throughout; explicit interface/type definitions in types.ts files
+- Types: TypeScript throughout; explicit interface/type definitions in types.ts files
 - Naming: camelCase for variables/functions, PascalCase for components/interfaces
 - Error handling: Use try/catch blocks, early returns, null checks
 - Components: One component per file, functional components with React hooks

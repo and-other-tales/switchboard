@@ -18,6 +18,15 @@ const PORT = parseInt(process.env.WEBSOCKET_PORT || process.env.PORT || "8081", 
 const PUBLIC_URL = process.env.PUBLIC_URL || "";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
+// Make sure environment variables are set
+if (!OPENAI_API_KEY) {
+  console.error("OPENAI_API_KEY is not set. Please set this environment variable.");
+}
+
+if (!PUBLIC_URL) {
+  console.warn("PUBLIC_URL is not set. Using default hostname for WebSocket connections.");
+}
+
 const app = express();
 app.use(cors());
 const server = http.createServer(app);

@@ -14,10 +14,10 @@ This guide explains how to deploy the Switchboard application to Google Cloud Ru
 ### 1. Set up environment variables
 
 In Google Cloud Run, set the following environment variables:
-- `OPENAI_API_KEY`: Your OpenAI API key
-- `TWILIO_ACCOUNT_SID`: Your Twilio Account SID
-- `TWILIO_AUTH_TOKEN`: Your Twilio Auth Token
-- `PUBLIC_URL`: Your Cloud Run service URL (will be automatically set if not specified)
+- `OPENAI_API_KEY`: Your OpenAI API key (required for websocket-server)
+- `TWILIO_ACCOUNT_SID`: Your Twilio Account SID (required for webapp)
+- `TWILIO_AUTH_TOKEN`: Your Twilio Auth Token (required for webapp)
+- `PUBLIC_URL`: Your Cloud Run service URL (will be automatically set to your service URL if not specified)
 
 ### 2. Build and deploy the application
 
@@ -86,4 +86,9 @@ After deployment, get your Cloud Run service URL and update your Twilio phone nu
 
 - The application listens on port 8080 as required by Cloud Run
 - Both the webapp and websocket-server run in the same container
+- Internal communication uses port 8081 for the websocket-server
 - The `PUBLIC_URL` is automatically set to your Cloud Run service URL if not specified
+- The `NEXT_PUBLIC_WEBSOCKET_URL` is automatically set based on the service URL
+- Environment variables are passed through to both services automatically
+- For local development, you can use environment files (.env) instead of system environment variables
+- The start.sh script builds and starts both the webapp and websocket-server at runtime

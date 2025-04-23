@@ -42,7 +42,7 @@ export default function ChecklistAndConfig({
 
   const [allChecksPassed, setAllChecksPassed] = useState(false);
   const [webhookLoading, setWebhookLoading] = useState(false);
-  const [ngrokLoading, setNgrokLoading] = useState(false);
+  const [connectionLoading, setConnectionLoading] = useState(false);
 
   const appendedTwimlUrl = publicUrl ? `${publicUrl}/twiml` : "";
   const isWebhookMismatch =
@@ -128,9 +128,9 @@ export default function ChecklistAndConfig({
     }
   };
 
-  const checkNgrok = async () => {
+  const checkConnection = async () => {
     if (!publicUrl) return;
-    setNgrokLoading(true);
+    setConnectionLoading(true);
     let success = false;
     for (let i = 0; i < 5; i++) {
       try {
@@ -151,7 +151,7 @@ export default function ChecklistAndConfig({
     if (!success) {
       setPublicUrlAccessible(false);
     }
-    setNgrokLoading(false);
+    setConnectionLoading(false);
   };
 
   const checklist = useMemo(() => {
@@ -231,10 +231,10 @@ export default function ChecklistAndConfig({
             <div className="flex-1">
               <Button
                 variant="outline"
-                onClick={checkNgrok}
+                onClick={checkConnection}
                 className="w-full bg-black text-white"
               >
-                {ngrokLoading ? (
+                {connectionLoading ? (
                   <Loader2 className="mr-2 h-4 animate-spin" />
                 ) : (
                   "Check Connection"
@@ -285,7 +285,7 @@ export default function ChecklistAndConfig({
     isWebhookMismatch,
     appendedTwimlUrl,
     webhookLoading,
-    ngrokLoading,
+    connectionLoading,
     setSelectedPhoneNumber,
   ]);
 
@@ -295,7 +295,7 @@ export default function ChecklistAndConfig({
 
   useEffect(() => {
     if (!ready) {
-      checkNgrok();
+      checkConnection();
     }
   }, [localServerUp, ready]);
 
