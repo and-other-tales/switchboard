@@ -223,7 +223,7 @@ export default function ChecklistAndConfig({
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
               <Input 
-                value={process.env.PUBLIC_URL + ":8081"} 
+                value={publicUrl + ":8081"} 
                 onChange={(e) => setPublicUrl(e.target.value)} 
                 placeholder="Public URL (from Cloud Run)"
               />
@@ -232,7 +232,7 @@ export default function ChecklistAndConfig({
               <Button
                 variant="outline"
                 onClick={checkNgrok}
-                className="w-full"
+                className="w-full bg-black text-white"
               >
                 {ngrokLoading ? (
                   <Loader2 className="mr-2 h-4 animate-spin" />
@@ -252,7 +252,7 @@ export default function ChecklistAndConfig({
           <div className="flex items-center gap-2 w-full">
             <div className="flex-1">
               <Input 
-                value={process.env.PUBLIC_URL} 
+                value={publicUrl} 
                 onChange={(e) => setCurrentVoiceUrl(e.target.value)} 
                 className="w-full" 
               />
