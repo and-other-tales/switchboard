@@ -18,12 +18,42 @@ In Google Cloud Run, set the following environment variables:
 - `TWILIO_ACCOUNT_SID`: Your Twilio Account SID
 - `TWILIO_AUTH_TOKEN`: Your Twilio Auth Token
 - `PUBLIC_URL`: Your Cloud Run service URL (will be automatically set if not specified)
-- `GOOGLE_CLIENT_ID`: Your Google OAuth Client ID
-- `GOOGLE_CLIENT_SECRET`: Your Google OAuth Client Secret
-- `NEXTAUTH_URL`: Your Cloud Run service URL (e.g., https://your-service-url.run.app)
-- `NEXTAUTH_SECRET`: A secure random string for NextAuth.js session encryption
 
 ### 2. Build and deploy the application
+
+#### Using cloudbuild.yaml
+
+1. Create a `cloudbuild.yaml` file in the root of your repository with the following content:
+
+```yaml
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/switchboard', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/switchboard']
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: [
+      'run', 'deploy', 'switchboard',
+      '--image', 'gcr.io/$PROJECT_ID/switchboard',
+      '--platform', 'managed',
+      '--allow-unauthenticated',
+      '--region', 'europe-west4',
+      '--set-env-vars',
+      'OPENAI_API_KEY=$OPENAI_API_KEY,TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN'
+    ]
+substitutions:
+  _OPENAI_API_KEY: 'YOUR_OPENAI_API_KEY'
+  _TWILIO_ACCOUNT_SID: 'YOUR_TWILIO_ACCOUNT_SID'
+  _TWILIO_AUTH_TOKEN: 'YOUR_TWILIO_AUTH_TOKEN'
+```
+
+2. Trigger the build and deployment using the following command:
+
+```bash
+gcloud builds submit --config cloudbuild.yaml
+```
+
+#### Manually
 
 ```bash
 # Authenticate with Google Cloud
@@ -43,7 +73,7 @@ gcloud run deploy switchboard \
   --image gcr.io/YOUR_PROJECT_ID/switchboard \
   --platform managed \
   --allow-unauthenticated \
-  --region us-central1 \
+  --region europe-wes4 \
   --set-env-vars="OPENAI_API_KEY=YOUR_OPENAI_API_KEY,TWILIO_ACCOUNT_SID=YOUR_TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN=YOUR_TWILIO_AUTH_TOKEN"
 ```
 
