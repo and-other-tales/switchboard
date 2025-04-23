@@ -5,10 +5,8 @@ node_modules
 .venv/
 
 # Build outputs
-**/.next
 **/out
 webapp/build
-webapp/.next
 websocket-server/dist/
 
 # Logs
