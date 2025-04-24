@@ -72,12 +72,17 @@ export default function ChecklistAndConfig({
         if (config.publicUrl) {
           setPublicUrl(config.publicUrl);
         }
-        // Don't automatically set ready to true here, let the checklist verify first
+        if (config.selectedPhoneNumber) {
+          setSelectedPhoneNumber(config.selectedPhoneNumber);
+        }
+        if (config.ready) {
+          setReady(config.ready);
+        }
       }
     } catch (err) {
       console.error("Error loading saved configuration:", err);
     }
-  }, []);
+  }, [setReady, setSelectedPhoneNumber]);
 
   useEffect(() => {
     let polling = true;
