@@ -58,14 +58,37 @@ const SessionConfigurationPanel: React.FC<SessionConfigurationPanelProps> = ({
     }
   }, [saveStatus]);
 
+  // Load saved configuration on component mount
+  useEffect(() => {
+    try {
+      const savedConfig = localStorage.getItem('sessionConfig');
+      if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        if (config.instructions) {
+          setInstructions(config.instructions);
+        }
+        if (config.voice) {
+          setVoice(config.voice);
+        }
+        if (config.tools) {
+          setTools(config.tools.map((tool: any) => JSON.stringify(tool)));
+        }
+      }
+    } catch (err) {
+      console.error("Error loading saved configuration:", err);
+    }
+  }, []);
+
   const handleSave = async () => {
     setSaveStatus("saving");
     try {
-      await onSave({
+      const config = {
         instructions,
         voice,
         tools: tools.map((tool) => JSON.parse(tool)),
-      });
+      };
+      await onSave(config);
+      localStorage.setItem('sessionConfig', JSON.stringify(config));
       setSaveStatus("saved");
       setHasUnsavedChanges(false);
     } catch (error) {
